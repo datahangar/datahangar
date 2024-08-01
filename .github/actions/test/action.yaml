@@ -1,0 +1,75 @@
+name: 'Test datahangar'
+description: 'Tests the datahangar stack'
+inputs:
+  pmacct-ref:
+    description: 'pmacct git ref'
+    default: ""
+  k8s_version:
+    default: "v1.29.4"
+  db:
+    default: "druid"
+
+outputs:
+  script-output:
+    description: 'The output of the script'
+
+runs:
+  using: 'composite'
+  steps:
+      - name: "Start minikube - K8s ${{ inputs.k8s_version }}"
+        id: minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          kubernetes-version: ${{ inputs.k8s_version }}
+          cpus: 'max'
+          memory: 12G
+
+      - name: "Use local docker registry"
+        shell: bash
+        run: |
+          eval $(minikube docker-env)
+
+      - name: "Deploy DataHangar stack (DB: ${{ inputs.db }})"
+        shell: bash
+        run: |
+          cd /home/runner/work/datahangar/datahangar/datahangar
+          rm stack/overlays/dev/storage/db
+          ln -sf ${{ inputs.db }} stack/overlays/dev/storage/db
+          ls -la stack/overlays/dev/storage
+          tools/dhctl.py -v deploy dev
+
+      - name: Check health status of the DataHangar stack
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 40
+          retry_wait_seconds: 15
+          shell: bash
+          command: /home/runner/work/datahangar/datahangar/datahangar/tools/dhctl.py status dev -p /home/runner/work/datahangar/datahangar/datahangar/
+
+      - name: Inject 1024 netflow records
+        shell: bash
+        run: |
+          minikube kubectl -- apply -f /home/runner/work/datahangar/datahangar/datahangar/.github/workflows/files/job-inject-netflow.yaml
+
+      - name: Launch count rows in TS DB job
+        shell: bash
+        run: |
+          minikube kubectl -- apply -f /home/runner/work/datahangar/datahangar/datahangar/.github/workflows/files/count-db-records.yaml
+
+      - name: Launch check datacubes in Turnilo job
+        shell: bash
+        run: |
+          #Web ui is only supported with Druid DB
+          if [[ "${{ inputs.db }}" == "druid" ]]; then
+            minikube kubectl -- apply -f /home/runner/work/datahangar/datahangar/datahangar/.github/workflows/files/turnilo-check-datacube.yaml
+          fi
+
+      - name: Check that number of rows in TS_DB matches injected traffic
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 3
+          max_attempts: 40
+          retry_wait_seconds: 15
+          shell: bash
+          command: /home/runner/work/datahangar/datahangar/datahangar/tools/dhctl.py status dev -p /home/runner/work/datahangar/datahangar/datahangar/
