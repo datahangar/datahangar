@@ -29,10 +29,19 @@ runs:
         run: |
           eval $(minikube docker-env)
 
+      - name: "Set nfacctd ref to '${{inputs.pmacct-ref}}'"
+        shell: bash
+        if: inputs.pmacct-ref != ''
+        run: |
+          cd datahangar
+          sed  's/__PMACCT_REF__/${{inputs.pmacct-ref}}/g' .github/actions/test/02-nfacctd.yaml.patch > stack/overlays/dev/collection/nfacctd/02-nfacctd.yaml
+          echo "patches:" >> stack/overlays/dev/collection/nfacctd/kustomization.yaml
+          echo "- path: 02-nfacctd.yaml" >> stack/overlays/dev/collection/nfacctd/kustomization.yaml
+
       - name: "Deploy DataHangar stack (DB: ${{ inputs.db }})"
         shell: bash
         run: |
-          cd /home/runner/work/datahangar/datahangar/datahangar
+          cd datahangar
           rm stack/overlays/dev/storage/db
           ln -sf ${{ inputs.db }} stack/overlays/dev/storage/db
           ls -la stack/overlays/dev/storage
@@ -45,25 +54,23 @@ runs:
           max_attempts: 40
           retry_wait_seconds: 15
           shell: bash
-          command: /home/runner/work/datahangar/datahangar/datahangar/tools/dhctl.py status dev -p /home/runner/work/datahangar/datahangar/datahangar/
+          command: datahangar/tools/dhctl.py status dev -p datahangar
 
       - name: Inject 1024 netflow records
         shell: bash
         run: |
-          minikube kubectl -- apply -f /home/runner/work/datahangar/datahangar/datahangar/.github/workflows/files/job-inject-netflow.yaml
+          minikube kubectl -- apply -f datahangar/.github/actions/test/files/job-inject-netflow.yaml
 
       - name: Launch count rows in TS DB job
         shell: bash
         run: |
-          minikube kubectl -- apply -f /home/runner/work/datahangar/datahangar/datahangar/.github/workflows/files/count-db-records.yaml
+          minikube kubectl -- apply -f datahangar/.github/actions/test/files/count-db-records.yaml
 
       - name: Launch check datacubes in Turnilo job
         shell: bash
+        if: inputs.db == 'druid'
         run: |
-          #Web ui is only supported with Druid DB
-          if [[ "${{ inputs.db }}" == "druid" ]]; then
-            minikube kubectl -- apply -f /home/runner/work/datahangar/datahangar/datahangar/.github/workflows/files/turnilo-check-datacube.yaml
-          fi
+          minikube kubectl -- apply -f datahangar/.github/actions/test/files/turnilo-check-datacube.yaml
 
       - name: Check that number of rows in TS_DB matches injected traffic
         uses: nick-fields/retry@v3
@@ -72,4 +79,4 @@ runs:
           max_attempts: 40
           retry_wait_seconds: 15
           shell: bash
-          command: /home/runner/work/datahangar/datahangar/datahangar/tools/dhctl.py status dev -p /home/runner/work/datahangar/datahangar/datahangar/
+          command: datahangar/tools/dhctl.py status dev -p datahangar

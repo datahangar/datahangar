@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfacctd-workers
+  namespace: datahangar-stack
+  labels:
+    app: nfacctd
+spec:
+  template:
+    spec:
+      containers:
+        - name: nfacctd-worker
+          image: pmacct/nfacctd:__PMACCT_REF__
