@@ -8,6 +8,11 @@ inputs:
     default: "v1.29.4"
   db:
     default: "druid"
+  #Other stuff
+  KCTL:
+    default: "minikube kubectl -- "
+  N_RECORDS:
+    default: 1024
 
 outputs:
   script-output:
@@ -16,6 +21,13 @@ outputs:
 runs:
   using: 'composite'
   steps:
+      - name: "Define ENV variables"
+        shell: bash
+        run: |
+          echo "Environment variables:"
+          echo "KCTL=${{ inputs.KCTL }}" >> $GITHUB_ENV
+          echo "N_RECORDS=${{ inputs.N_RECORDS }}" >> $GITHUB_ENV
+
       - name: "Start minikube - K8s ${{ inputs.k8s_version }}"
         id: minikube
         uses: medyagh/setup-minikube@latest

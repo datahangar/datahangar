@@ -56,9 +56,6 @@ jobs:
       matrix:
         k8s_version: [v1.27.13, v1.28.9, v1.29.4]
         db: [druid, clickhouse]
-    env:
-      KCTL: "minikube kubectl -- "
-      N_RECORDS: 1024
     steps:
       - name: Cleanup disk to maximize runner disk space
         uses: AdityaGarg8/remove-unwanted-software@v3 #easimon/maximize-build-space@v10
