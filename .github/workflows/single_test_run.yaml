@@ -3,6 +3,10 @@ name: single-test-run
 on:
   workflow_call:
     inputs:
+      datahangar-ref:
+        description: 'datahangar git ref'
+        default: "main"
+        type: string
       pmacct-ref:
         description: 'pmacct git ref'
         type: string
@@ -30,13 +34,14 @@ jobs:
       - name: Checkout datahangar
         uses: actions/checkout@v4
         with:
-          path: /tmp/datahangar
+          repository: datahangar/datahangar
+          ref: ${{ inputs.datahangar-ref }}
+          path: datahangar
 
       - name: Install dependencies
         run: |
           apt-get update && apt-get install -y jq
           pip install -r datahangar/tools/requirements.txt
-          cd /tmp
 
       - name: Execute the test
         uses: ./datahangar/.github/actions/test
