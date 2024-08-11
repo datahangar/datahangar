@@ -30,12 +30,13 @@ jobs:
       - name: Checkout datahangar
         uses: actions/checkout@v4
         with:
-          path: datahangar
+          path: /tmp/datahangar
 
       - name: Install dependencies
         run: |
           apt-get update && apt-get install -y jq
           pip install -r datahangar/tools/requirements.txt
+          cd /tmp
 
       - name: Execute the test
         uses: ./datahangar/.github/actions/test
