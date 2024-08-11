@@ -1,0 +1,17 @@
+name: nightly_single_test_run
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # every day at midnight
+
+jobs:
+  dh-druid-1_7_8:
+    uses: datahangar/datahangar/.github/workflows/single_test_run.yaml@main
+    with:
+      pmacct-ref: "v1.7.8" #test pmacct-ref
+      db: "druid"
+  dh-clickhouse-nfacctd_latest:
+    uses: datahangar/datahangar/.github/workflows/single_test_run.yaml@main
+    with:
+      #pmacct-ref: "latest"
+      db: "clickhouse"

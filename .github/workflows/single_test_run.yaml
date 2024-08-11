@@ -1,0 +1,45 @@
+name: single-test-run
+
+on:
+  workflow_call:
+    inputs:
+      pmacct-ref:
+        description: 'pmacct git ref'
+        type: string
+        default: ""
+      k8s_version:
+        type: string
+        default: "v1.29.4"
+      db:
+        type: string
+        default: "druid"
+
+jobs:
+  single-test-run:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Cleanup disk to maximize runner disk space
+        uses: AdityaGarg8/remove-unwanted-software@v3 #easimon/maximize-build-space@v10
+        with:
+          remove-android: true
+          remove-dotnet: True
+          remove-haskell: true
+          remove-codeql: true
+          remove-docker-images: true
+
+      - name: Checkout datahangar
+        uses: actions/checkout@v4
+        with:
+          path: datahangar
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y jq
+          pip install -r datahangar/tools/requirements.txt
+
+      - name: Execute the test
+        uses: ./datahangar/.github/actions/test
+        with:
+          pmacct-ref: "${{ inputs.pmacct-ref }}"
+          k8s_version: "${{ inputs.k8s_version }}"
+          db: "${{ inputs.db }}"
