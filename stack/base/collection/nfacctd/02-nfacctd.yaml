@@ -15,9 +15,16 @@ spec:
       labels:
         app: nfacctd
     spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: nfacctd
       initContainers:
         - name: nfacctd-conf-generator
-          image: ghcr.io/datahangar/init-conf-gen:0.0.1
+          image: ghcr.io/datahangar/init-conf-gen:0.0.2
           imagePullPolicy: IfNotPresent
           env:
             - name: KAFKA_USERNAME
