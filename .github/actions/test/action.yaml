@@ -35,6 +35,7 @@ runs:
           kubernetes-version: ${{ inputs.k8s_version }}
           cpus: 'max'
           memory: 12G
+          cache: false #Unfortunately cache doesn't take into account 'cni'
 
       - name: "Use local docker registry"
         shell: bash

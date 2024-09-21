@@ -101,7 +101,15 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [v1.27.13, v1.28.9, v1.29.4]
+        cni_addons: [cilium, calico-metallb]
     steps:
+      - name: Split matrix '${{ matrix.cni_addons }}' into 'cni' and 'addons'
+        id: split-cni-addons
+        run: |
+          IFS='-' read -r cni addons <<< "${{ matrix.cni_addons }}"
+          echo "cni=${cni}" >> $GITHUB_ENV
+          echo "addons=${addons}" >> $GITHUB_ENV
+
       - name: Cleanup disk to maximize runner disk space
         uses: AdityaGarg8/remove-unwanted-software@v3 #easimon/maximize-build-space@v10
         with:
@@ -121,14 +129,15 @@ jobs:
           apt-get update && apt-get install -y jq tcpdump coreutils
           pip install -r datahangar/tools/requirements.txt
 
-      - name: "[minikube] Start K8s ${{ matrix.k8s_version }}"
+      - name: "[minikube] Start K8s ${{ matrix.k8s_version }} (cni: ${{ env.cni }}, addons: ${{ env.addons }})"
         id: minikube
         uses: medyagh/setup-minikube@latest
         with:
           kubernetes-version: ${{ matrix.k8s_version }}
           cpus: 'max'
           memory: 12G
-          cni: cilium
+          cni: ${{ env.cni }}
+          addons: ${{ env.addons }}
           driver: docker
           #Fix minikube version (buggy for cilium in 1.34.0, minikube#19683
           minikube-version: 1.33.1
@@ -138,6 +147,7 @@ jobs:
           eval $(minikube docker-env)
 
       - name: "[cilium] Install CLI"
+        if: env.cni == 'cilium'
         run: |
           CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
           GOOS=$(go env GOOS)
@@ -146,16 +156,14 @@ jobs:
           sudo tar -C /usr/local/bin -xzvf cilium-${GOOS}-${GOARCH}.tar.gz
           rm cilium-${GOOS}-${GOARCH}.tar.gz
 
-      - name: "[cilium] Enable KPR"
+      #No MetalLB (minikube tunnel + KPR)
+      - name: "[cilium] Enable KPR (no MetalLB)"
+        if: env.cni == 'cilium' && env.addons != 'metallb'
         run: |
           cilium config set kube-proxy-replacement true
 
-      - name: "[minikube] Bring up tunnel (enable LoadBalancer traffic)"
-        run: |
-          minikube tunnel &
-          sleep 10 #Just to see the output clearly
-
-      - name: "[cilium] Wait for a clean status"
+      - name: "[cilium] Wait for a clean status (no MetalLB)"
+        if: env.cni == 'cilium' && env.addons != 'metallb'
         run: |
           i=0
           MAX_ITERATIONS=5
@@ -167,6 +175,18 @@ jobs:
           done
           cilium status
           cilium config view
+
+      - name: "[minikube] Bring up tunnel (enable LoadBalancer traffic) (no MetalLB)"
+        if: env.cni == 'cilium' && env.addons != 'metallb'
+        run: |
+          minikube tunnel &
+          sleep 10 #Just to see the output clearly
+
+      - name: "[metallb] Configure..."
+        if: env.addons == 'metallb'
+        run: |
+          minikube kubectl -- apply -f datahangar/.github/workflows/files/metallb-conf.yaml
+          sudo ip route add 10.70.0.0/24 via `minikube ip`
 
       - name: "[iptables] Add allow rules in FITLER for router <-> stack traffic..."
         run: |
@@ -183,7 +203,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-svc-flow-affinity-minikube_${{ matrix.k8s_version }}-${{ github.sha }}
+          name: test-svc-flow-affinity-minikube_${{ matrix.k8s_version }}-${{ matrix.cni_addons }}-${{ github.sha }}
           path: /home/runner/work/datahangar/datahangar/datahangar/test/test_svc-clientip-affinity/.output/
           include-hidden-files: true
           retention-days: 7

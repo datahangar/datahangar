@@ -7,12 +7,24 @@ N_ROUTERS:=12
 KCTL:=minikube kubectl --
 NS:=datahangar-stack
 NET_NS:=svc_test
-IFACE:=$(shell ip route | grep 10.96.0.0 | sed 's/.*dev \(.*\)/\1/')
+GW_ADDR:=$(shell docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' minikube)
+IFACE:=$(shell ip -o addr show | grep $(GW_ADDR) | awk '{print $$2}')
 COLLECT_LOGS_TIME_S:=15
 
 OUTPUT_FOLDER:=.output
 
-check: _folder _add_tap_ips _start_nfacctd _start_routers _check_outputs
+check: _info _folder _add_tap_ips _start_nfacctd _start_routers _check_outputs
+
+_info:
+	@echo "shell: $(SHELL)"
+	@echo "N_ROUTERS: $(N_ROUTERS)"
+	@echo "KCTL: $(KCTL)"
+	@echo "NS: $(NS)"
+	@echo "NET_NS: $(NET_NS)"
+	@echo "GW_ADDR: $(GW_ADDR)"
+	@echo "IFACE: $(IFACE)"
+	@echo "COLLECT_LOGS_TIME_S: $(COLLECT_LOGS_TIME_S)"
+	@echo "OUTPUT_FOLDER: $(OUTPUT_FOLDER)"
 
 _folder:
 	mkdir -p $(OUTPUT_FOLDER)
