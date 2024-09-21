@@ -48,7 +48,7 @@ jobs:
         run: |
           df -h
 
-  basic-test:
+  test-basic:
     needs: [cache-docker-images]
     runs-on: ubuntu-22.04
     strategy:
@@ -94,3 +94,93 @@ jobs:
         with:
           k8s_version: "${{ matrix.k8s_version }}"
           db: "${{ matrix.db }}"
+
+  test-svc-flow-affinity-minikube:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.27.13, v1.28.9, v1.29.4]
+    steps:
+      - name: Cleanup disk to maximize runner disk space
+        uses: AdityaGarg8/remove-unwanted-software@v3 #easimon/maximize-build-space@v10
+        with:
+          remove-android: true
+          remove-dotnet: True
+          remove-haskell: true
+          remove-codeql: true
+          remove-docker-images: true
+
+      - name: Checkout datahangar
+        uses: actions/checkout@v4
+        with:
+          path: datahangar
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y jq tcpdump coreutils
+          pip install -r datahangar/tools/requirements.txt
+
+      - name: "[minikube] Start K8s ${{ inputs.k8s_version }}"
+        id: minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          kubernetes-version: ${{ inputs.k8s_version }}
+          cpus: 'max'
+          memory: 12G
+          cni: cilium
+
+      - name: "[minikube] Use local docker registry"
+        run: |
+          eval $(minikube docker-env)
+
+      - name: "[cilium] Install CLI"
+        run: |
+          CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+          GOOS=$(go env GOOS)
+          GOARCH=$(go env GOARCH)
+          wget https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-${GOOS}-${GOARCH}.tar.gz
+          sudo tar -C /usr/local/bin -xzvf cilium-${GOOS}-${GOARCH}.tar.gz
+          rm cilium-${GOOS}-${GOARCH}.tar.gz
+
+      - name: "[cilium] Enable KPR"
+        run: |
+          cilium config set kube-proxy-replacement true
+
+      - name: "[minikube] Bring up tunnel (enable LoadBalancer traffic)"
+        run: |
+          minikube tunnel &
+          sleep 10 #Just to see the output clearly
+
+      - name: "[cilium] Wait for a clean status"
+        run: |
+          i=0
+          MAX_ITERATIONS=5
+          while true; do
+              [[ "$(cilium status | grep -i error)" == "" ]] && break;
+              i=$((i+1))
+              [[ "${i}" == "${MAX_ITERATIONS}" ]] && echo "ERROR: cilium is not sane!" &&  exit 1
+              sleep 10
+          done
+          cilium status
+          cilium config view
+
+      - name: "[iptables] Add allow rules in FITLER for router <-> stack traffic..."
+        run: |
+          sudo iptables -I FORWARD -s 10.0.0.0/8 -j ACCEPT
+          sudo iptables -I FORWARD -d 10.0.0.0/8 -j ACCEPT
+
+      - name: "[test] Run test..."
+        timeout-minutes: 25
+        run: |
+          pwd
+          cd datahangar/test/test_svc-clientip-affinity/ && make
+
+      - name: Upload the folder as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-svc-flow-affinity-minikube_${{ matrix.k8s_version }}-${{ github.sha }}
+          path: /home/runner/work/datahangar/datahangar/datahangar/test/test_svc-clientip-affinity/.output/
+          include-hidden-files: true
+          retention-days: 7

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfacctd-workers
+  namespace: datahangar-stack
+spec:
+  replicas: 4
+  template:
+    spec:
+      initContainers:
+        - name: nfacctd-conf-generator
+          $patch: delete
+      containers:
+        - name: nfacctd-worker
+          image: python:3.9.19-bookworm
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          command:
+            - python3
+            - /tmp/nfacctd_mock.py
+          volumeMounts:
+            - name: nfacctd-mock-binary-volume
+              mountPath: /tmp/nfacctd_mock.py
+              subPath: nfacctd_mock.py
+              readOnly: true
+            - name: datahangar-config-volume
+              $patch: delete
+            - name: nfacctd-config-volume
+              $patch: delete
+      volumes:
+        - name: datahangar-config-volume
+          $patch: delete
+        - name: nfacctd-config-volume
+          $patch: delete
+        - name: nfacctd-mock-binary-volume
+          configMap:
+            name: nfacctd-mock-binary
