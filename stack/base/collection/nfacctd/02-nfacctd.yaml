@@ -23,6 +23,18 @@ spec:
           matchLabels:
             app: nfacctd
       initContainers:
+        - name: sfunnel
+          image: ghcr.io/datahangar/sfunnel:0.0.6@sha256:be12287922d9b26ad3a77403957a6b1c4093a1e97dec44e0d2d3308a91596c03
+          securityContext:
+            privileged: false
+            capabilities:
+              add:
+                - BPF
+                - NET_ADMIN
+                - SYS_ADMIN
+          volumeMounts:
+            - name: bpffs
+              mountPath: /sys/fs/bpf
         - name: nfacctd-conf-generator
           image: ghcr.io/datahangar/init-conf-gen:0.0.2
           imagePullPolicy: IfNotPresent
@@ -52,12 +64,18 @@ spec:
           image: pmacct/nfacctd:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - name: flowlogs
-              protocol: UDP
-              containerPort: 2055
             - name: bgp
               protocol: TCP
               containerPort: 179
+            - name: ipfix
+              protocol: UDP
+              containerPort: 4739
+            - name: sflow
+              protocol: UDP
+              containerPort: 6343
+            - name: netflow
+              protocol: UDP
+              containerPort: 2055
           volumeMounts:
             - name: datahangar-config-volume
               mountPath: /etc/datahangar
@@ -73,6 +91,9 @@ spec:
               cpu: 500m
               memory: 256M
       volumes:
+        - name: bpffs
+          hostPath:
+            path: /sys/fs/bpf
         - name: datahangar-config-volume
           configMap:
             name: datahangar-config-map

@@ -7,14 +7,22 @@ spec:
   selector:
     app: nfacctd
   ports:
-  - name: flowlogs
-    protocol: UDP
-    port: 2055
-    targetPort: 2055
   - name: bgp
     protocol: TCP
     port: 179
     targetPort: 179
+  - name: ipfix
+    protocol: UDP
+    port: 4739
+    targetPort: 4739
+  - name: sflow
+    protocol: UDP
+    port: 6343
+    targetPort: 6343
+  - name: netflow
+    protocol: UDP
+    port: 2055
+    targetPort: 2055
   type: ClusterIP
   sessionAffinity: ClientIP
 ---
@@ -27,14 +35,11 @@ spec:
   selector:
     app: nfacctd
   ports:
-  - name: flowlogs
-    protocol: UDP
-    port: 2055
-    targetPort: 2055
   - name: bgp
     protocol: TCP
     port: 179
     targetPort: 179
+    #IPFIX, sFLOW and Netflow funneled through TCP/179
   type: LoadBalancer
   externalTrafficPolicy: Local #Do not SNAT to the service!
   sessionAffinity: ClientIP
