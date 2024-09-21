@@ -1,6 +1,9 @@
 SHELL=/bin/bash
 N_ROUTERS:=12
 
+#Note don't use 10.1.1.0/24 in Github actions; it is probably
+#used by runners. Offset it (e.g. 10.50.X.1 where X is the router)
+
 KCTL:=minikube kubectl --
 NS:=datahangar-stack
 NET_NS:=svc_test
@@ -28,7 +31,7 @@ _add_tap_ips:
 	sudo ip addr add 192.168.0.1/24 dev veth0
 	sudo ip link set netns $(NET_NS) dev veth1
 	sudo ip netns exec $(NET_NS) ip link set up dev veth1
-	for (( i=1; i<=$(N_ROUTERS); i++ )); do sudo ip netns exec $(NET_NS) ip addr add 10.$$i.$$i.1/32 dev veth1; done
+	for (( i=1; i<=$(N_ROUTERS); i++ )); do sudo ip netns exec $(NET_NS) ip addr add 10.50.$$i.1/32 dev veth1; done
 	sudo ip netns exec $(NET_NS) ip addr add 192.168.0.2/24 dev veth1
 	sudo ip netns exec $(NET_NS) ip route add default via 192.168.0.1
 	sudo ip route add 10.0.0.0/8 via 192.168.0.2
@@ -46,7 +49,7 @@ _start_routers:
 	done; \
 	echo "LB IP: $${IP_LB_SVC}"; \
 	for (( i=1; i<=$(N_ROUTERS); i++ )); do \
-		sudo ip netns exec $(NET_NS) bash -c "python3 -u router_mock.py $${IP_LB_SVC} 10.$$i.$$i.1 2>&1 > $(OUTPUT_FOLDER)/router_$$i.log &"; \
+		sudo ip netns exec $(NET_NS) bash -c "python3 -u router_mock.py $${IP_LB_SVC} 10.50.$$i.1 2>&1 > $(OUTPUT_FOLDER)/router_$$i.log &"; \
 	done
 	echo "All routers started"
 
@@ -73,10 +76,12 @@ _check_outputs:
 	cat $(OUTPUT_FOLDER)/pod_*.log > .worker_logs
 	python3 check_logs.py .worker_logs || exit 1
 	echo -n "Checking logs for IP preservation..."
-	if [[ "$$(grep "10.1.1.1" .worker_logs)" == "" ]]; then \
-		echo "FAILURE: no logs for 10.1.1.1 which indicate SRC IP is not being preserved!";\
-		exit 1; \
-	fi
+	for (( i=1; i<=$(N_ROUTERS); i++ )); do \
+		if [[ "$$(grep "10.50.$$i.1" .worker_logs)" == "" ]]; then \
+			echo "FAILURE: no logs for 10.50.$$i.1 which indicate SRC IP is not being preserved!";\
+			exit 1; \
+		fi \
+	done
 	echo "OK"
 
 clean: _stop_routers _stop_nfacctd _del_tap_ips
