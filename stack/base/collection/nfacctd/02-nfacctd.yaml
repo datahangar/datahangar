@@ -24,7 +24,7 @@ spec:
             app: nfacctd
       initContainers:
         - name: sfunnel
-          image: ghcr.io/datahangar/sfunnel:0.0.6@sha256:be12287922d9b26ad3a77403957a6b1c4093a1e97dec44e0d2d3308a91596c03
+          image: ghcr.io/datahangar/sfunnel:0.0.7@sha256:b31e1b05919ab1f5a230910dad76b6fe6bd70b41c0d75e27101ec8c9998bf22c
           securityContext:
             privileged: false
             capabilities:

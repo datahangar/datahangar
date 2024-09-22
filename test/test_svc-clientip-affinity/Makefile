@@ -53,8 +53,8 @@ _add_tap_ips:
 
 _start_routers:
 	echo "Starting routers ..."
-	sudo docker run -t --privileged --network=host -e DIRECTION=ingress -e IFACES=veth0 ghcr.io/datahangar/sfunnel:0.0.6
-	echo "Attached BPF program to veth0"
+	sudo docker run -t --privileged --network=host -e DIRECTION=egress -e DEBUG=1 -e NETNS=svc_test -e IFACES=veth1 -v /var/run/netns:/var/run/netns ghcr.io/datahangar/sfunnel:0.0.7
+	echo "Attached BPF program to veth1"
 	while [[ "$${IP_LB_SVC}" == "" ]]; do \
 		IP_LB_SVC=`$(KCTL) -n $(NS) get svc flowlogs-ingestor -o jsonpath='{.status.loadBalancer.ingress[0].ip}'`; \
 		[[ "$${IP_LB_SVC}" != "" ]] || $(KCTL) -n $(NS) get svc flowlogs-ingestor; \
