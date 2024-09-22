@@ -121,7 +121,7 @@ jobs:
           apt-get update && apt-get install -y jq tcpdump coreutils
           pip install -r datahangar/tools/requirements.txt
 
-      - name: "[minikube] Start K8s ${{ inputs.k8s_version }}"
+      - name: "[minikube] Start K8s ${{ matrix.k8s_version }}"
         id: minikube
         uses: medyagh/setup-minikube@latest
         with:
@@ -129,6 +129,9 @@ jobs:
           cpus: 'max'
           memory: 12G
           cni: cilium
+          driver: docker
+          #Fix minikube version (buggy for cilium in 1.34.0, minikube#19683
+          minikube-version: 1.33.1
 
       - name: "[minikube] Use local docker registry"
         run: |
