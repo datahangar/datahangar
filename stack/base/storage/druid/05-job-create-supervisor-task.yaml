@@ -13,7 +13,7 @@ spec:
       name: druid-load-supervisor-tasks
     spec:
       containers:
-      - image: ghcr.io/datahangar/init-conf-gen:0.0.1
+      - image: ghcr.io/datahangar/init-conf-gen:0.0.2
         imagePullPolicy: IfNotPresent
         env:
           - name: KAFKA_USERNAME
