@@ -9,7 +9,7 @@ NS:=datahangar-stack
 NET_NS:=svc_test
 GW_ADDR:=$(shell docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' minikube)
 IFACE:=$(shell ip -o addr show | grep $(GW_ADDR) | awk '{print $$2}')
-COLLECT_LOGS_TIME_S:=15
+COLLECT_LOGS_TIME_S:=20
 
 OUTPUT_FOLDER:=.output
 

@@ -11,7 +11,7 @@ import datetime
 def tcp4_connect(remote_ip, tcp_port, local_ip):
     tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp.bind((local_ip, 0))
-    tcp.settimeout(5) #Fail fast (sometimes it gets stuck in connect() for a long time)
+    tcp.settimeout(1) #Fail fast (sometimes it gets stuck in connect() for a long time)
     tcp.connect((remote_ip, tcp_port))
     return tcp
 
