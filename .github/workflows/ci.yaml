@@ -125,7 +125,7 @@ jobs:
         id: minikube
         uses: medyagh/setup-minikube@latest
         with:
-          kubernetes-version: ${{ inputs.k8s_version }}
+          kubernetes-version: ${{ matrix.k8s_version }}
           cpus: 'max'
           memory: 12G
           cni: cilium
