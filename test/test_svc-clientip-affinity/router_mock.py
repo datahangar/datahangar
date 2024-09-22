@@ -10,8 +10,9 @@ import datetime
 #Create the fake BGP session
 def tcp4_connect(remote_ip, tcp_port, local_ip):
     tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp.bind((local_ip, 0))
+    tcp.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     tcp.settimeout(1) #Fail fast (sometimes it gets stuck in connect() for a long time)
+    tcp.bind((local_ip, 0))
     tcp.connect((remote_ip, tcp_port))
     return tcp
 

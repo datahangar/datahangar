@@ -61,7 +61,7 @@ _start_routers:
 	done; \
 	echo "LB IP: $${IP_LB_SVC}"; \
 	for (( i=1; i<=$(N_ROUTERS); i++ )); do \
-		sudo ip netns exec $(NET_NS) bash -c "python3 -u router_mock.py $${IP_LB_SVC} 10.50.$$i.1 2>&1 > $(OUTPUT_FOLDER)/router_$$i.log &"; \
+		sudo ip netns exec $(NET_NS) bash -c "PYTHONUNBUFFERED=1 ./router_mock.py $${IP_LB_SVC} 10.50.$$i.1 2>&1 > $(OUTPUT_FOLDER)/router_$$i.log &"; \
 	done
 	echo "All routers started"
 

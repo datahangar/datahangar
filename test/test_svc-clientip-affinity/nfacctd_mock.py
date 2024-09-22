@@ -25,6 +25,7 @@ def udp_listen():
 def tcp_listen():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     s.bind(("0.0.0.0", 179))
     s.listen(5)
 
@@ -56,8 +57,11 @@ def tcp_listen():
                 data = c.recv(1024)
 
                 if not data:
+                    err = s.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+                    if err == 0:
+                        continue
                     epoll.unregister(fileno)
-                    print(f"[{c.getpeername()}][{ts()}][TCP] CLOSE")
+                    print(f"[{c.getpeername()}][{ts()}][TCP] CLOSE (SO_ERROR: {err})")
                     with lock:
                         del addresses[c.getpeername()[0]]
                     c.close()
