@@ -32,6 +32,9 @@ spec:
                 - BPF
                 - NET_ADMIN
                 - SYS_ADMIN
+          env:
+            - name: SFUNNEL_RULESET
+              value: ip tcp dport 179 sport 540 actions unfunnel udp
           volumeMounts:
             - name: bpffs
               mountPath: /sys/fs/bpf
