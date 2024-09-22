@@ -49,7 +49,7 @@ jobs:
           df -h
 
   test-basic:
-    needs: [cache-docker-images]
+    needs: [cache-docker-images, test-svc-flow-affinity-minikube]
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -101,12 +101,13 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [v1.27.13, v1.28.9, v1.29.4]
-        cni_addons: [cilium, calico-metallb]
+        cni_addons: [cilium-kpr, cilium-metallb, calico-metallb]
     steps:
       - name: Split matrix '${{ matrix.cni_addons }}' into 'cni' and 'addons'
         id: split-cni-addons
         run: |
-          IFS='-' read -r cni addons <<< "${{ matrix.cni_addons }}"
+          CNI_ADDONS=`echo ${{matrix.cni_addons}} | sed 's/-kpr//g'`
+          IFS='-' read -r cni addons <<< "$CNI_ADDONS"
           echo "cni=${cni}" >> $GITHUB_ENV
           echo "addons=${addons}" >> $GITHUB_ENV
 
@@ -163,7 +164,7 @@ jobs:
           cilium config set kube-proxy-replacement true
 
       - name: "[cilium] Wait for a clean status (no MetalLB)"
-        if: env.cni == 'cilium' && env.addons != 'metallb'
+        if: env.cni == 'cilium'
         run: |
           i=0
           MAX_ITERATIONS=5
@@ -177,7 +178,7 @@ jobs:
           cilium config view
 
       - name: "[minikube] Bring up tunnel (enable LoadBalancer traffic) (no MetalLB)"
-        if: env.cni == 'cilium' && env.addons != 'metallb'
+        if: env.addons != 'metallb'
         run: |
           minikube tunnel &
           sleep 10 #Just to see the output clearly
