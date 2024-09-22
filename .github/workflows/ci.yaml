@@ -24,15 +24,6 @@ jobs:
         with:
           path: datahangar
 
-      - name: Cache Docker images
-        id: docker-cache
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.docker
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
       - name: Cache docker images into a tarball
         run: |
           cd datahangar
@@ -43,6 +34,15 @@ jobs:
             docker pull ${IMAGE}
           done
           docker save $(for IMAGE in ${IMAGES}; do echo "${IMAGE} "; done) -o /tmp/.docker/docker_images.tar
+
+      - name: Cache Docker images
+        id: docker-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.docker
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ github.sha }}
 
       - name: Check available disk space...
         run: |
@@ -77,12 +77,12 @@ jobs:
           pip install -r datahangar/tools/requirements.txt
 
       - name: Restore Docker images
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/.docker
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
+            ${{ runner.os }}-buildx-${{ github.sha }}
 
       - name: Import docker cached images to minikube's registry
         run: |
