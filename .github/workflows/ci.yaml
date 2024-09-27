@@ -101,7 +101,7 @@ jobs:
       fail-fast: false
       matrix:
         k8s_version: [v1.27.13, v1.28.9, v1.29.4]
-        cni_addons: [cilium-kpr, cilium-metallb, calico-metallb]
+        cni_addons: [cilium-kpr, cilium-metallb, calico-metallb, flannel-metallb]
     steps:
       - name: Split matrix '${{ matrix.cni_addons }}' into 'cni' and 'addons'
         id: split-cni-addons
