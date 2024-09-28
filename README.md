@@ -1,10 +1,35 @@
 # Datahangar
 
-A bunch of Kustomize scripts to launch a complete e2e data pipeline to validate several features of pmacct
-(mostly JSON via kafka to a TS DB path).
 
-(This is heavily WIP, so ignore this repository for now)
+datahangar aims at providing a fully open-source, Kubernetes-deployable,
+end-to-end network data pipeline.
 
-## Authors
+:warning: Note: This project is currently under heavy development and is not yet
+ready for end-users to use.
 
-Marc Sune < marcdevel (at) gmail (dot) com>
+## Stack
+
+* Infrastructure:
+  * Kubernetes
+  * postgresql
+  * zookeeper
+* Collection:
+  * pmacct
+* Bus
+  * Kafka
+* Storage
+  * Clickhouse _or_
+  * Druid
+* Visualization
+  * Turnilo (only compatible with Druid at the moment)
+
+## Documentation
+
+:construction_worker: Work in progress.
+
+## Contact
+
+If you're interested in this project or would like to contribute, feel free to
+reach out:
+
+:email: Marc Sune < marcdevel (at) gmail (dot) com>
