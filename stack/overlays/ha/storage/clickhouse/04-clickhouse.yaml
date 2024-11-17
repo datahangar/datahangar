@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse-shard0
+  namespace: datahangar-stack
+  labels:
+    app.kubernetes.io/name: clickhouse
+    app.kubernetes.io/component: clickhouse
+spec:
+  replicas: 3
