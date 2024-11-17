@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: datahangar-stack
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: zookeeper-server
+        env:
+        - name : KAFKA_HEAP_OPTS
+          value: "-Xms512M -Xmx512M"
+        - name : ZOOKEEPER_SERVERS
+          value: "zookeeper-0.zookeeper-headless-service.stack:2888:3888;zookeeper-1.zookeeper-headless-service.stack:2888:3888;zookeeper-2.zookeeper-headless-service.stack:2888:3888"
+        - name: ZOOKEEPER_SERVER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
