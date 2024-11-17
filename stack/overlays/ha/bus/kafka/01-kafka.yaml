@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: datahangar-stack
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: kafka-broker
+        env:
+        - name: KAFKA_HEAP_OPTS
+          value: -Xms512M -Xmx512M
+        - name: KAFKA_LOG_DIRS
+          value: "/opt/kafka/data-0/logs"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "3"
+        volumeMounts:
+          - name: datadir-0
+            mountPath: /opt/kafka/data-0
+      volumes:
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir-0
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: "1Gi"
