@@ -1,6 +1,9 @@
 name: 'Test datahangar'
 description: 'Tests the datahangar stack'
 inputs:
+  overlay:
+    description: "Overlay to run"
+    default: "dev"
   pmacct-ref:
     description: 'pmacct git ref'
     default: ""
@@ -47,18 +50,18 @@ runs:
         if: inputs.pmacct-ref != ''
         run: |
           cd datahangar
-          sed  's/__PMACCT_REF__/${{inputs.pmacct-ref}}/g' .github/actions/test/02-nfacctd.yaml.patch > stack/overlays/dev/collection/nfacctd/02-nfacctd.yaml
-          echo "patches:" >> stack/overlays/dev/collection/nfacctd/kustomization.yaml
-          echo "- path: 02-nfacctd.yaml" >> stack/overlays/dev/collection/nfacctd/kustomization.yaml
+          sed  's/__PMACCT_REF__/${{inputs.pmacct-ref}}/g' .github/actions/test/02-nfacctd.yaml.patch > stack/overlays/${{ inputs.overlay }}/collection/nfacctd/02-nfacctd.yaml
+          echo "patches:" >> stack/overlays/${{ inputs.overlay }}/collection/nfacctd/kustomization.yaml
+          echo "- path: 02-nfacctd.yaml" >> stack/overlays/${{ inputs.overlay }}/collection/nfacctd/kustomization.yaml
 
-      - name: "Deploy DataHangar stack (DB: ${{ inputs.db }})"
+      - name: "Deploy DataHangar stack (DB: ${{ inputs.db }}, overlay: ${{inputs.overlay}})"
         shell: bash
         run: |
           cd datahangar
-          rm stack/overlays/dev/storage/db
-          ln -sf ${{ inputs.db }} stack/overlays/dev/storage/db
-          ls -la stack/overlays/dev/storage
-          tools/dhctl.py -v deploy dev
+          rm stack/overlays/${{ inputs.overlay }}/storage/db
+          ln -sf ${{ inputs.db }} stack/overlays/${{ inputs.overlay }}/storage/db
+          ls -la stack/overlays/${{ inputs.overlay }}/storage
+          tools/dhctl.py -v deploy ${{ inputs.overlay }}
 
       - name: Check health status of the DataHangar stack
         uses: nick-fields/retry@v3
@@ -67,7 +70,7 @@ runs:
           max_attempts: 40
           retry_wait_seconds: 15
           shell: bash
-          command: datahangar/tools/dhctl.py status dev -p datahangar
+          command: datahangar/tools/dhctl.py status ${{ inputs.overlay }} -p datahangar
 
       - name: Inject 1024 netflow records
         shell: bash
@@ -92,4 +95,4 @@ runs:
           max_attempts: 40
           retry_wait_seconds: 15
           shell: bash
-          command: datahangar/tools/dhctl.py status dev -p datahangar
+          command: datahangar/tools/dhctl.py status ${{ inputs.overlay }} -p datahangar

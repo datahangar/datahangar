@@ -54,8 +54,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.27.13, v1.28.9, v1.29.4]
-        db: [druid, clickhouse]
+        combination:
+          #dev
+          - {k8s_version: v1.27.13, db: druid, overlay: dev}
+          - {k8s_version: v1.27.13, db: clickhouse, overlay: dev}
+          - {k8s_version: v1.28.9, db: druid, overlay: dev}
+          - {k8s_version: v1.28.9, db: clickhouse, overlay: dev}
+          - {k8s_version: v1.29.4, db: druid, overlay: dev}
+          - {k8s_version: v1.29.4, db: clickhouse, overlay: dev}
+          #ha
+          - {k8s_version: v1.29.4, db: clickhouse, overlay: ha}
     steps:
       - name: Cleanup disk to maximize runner disk space
         uses: AdityaGarg8/remove-unwanted-software@v3 #easimon/maximize-build-space@v10
@@ -92,8 +100,9 @@ jobs:
       - name: Execute the tests
         uses: ./datahangar/.github/actions/test
         with:
-          k8s_version: "${{ matrix.k8s_version }}"
-          db: "${{ matrix.db }}"
+          k8s_version: "${{ matrix.combination.k8s_version }}"
+          db: "${{ matrix.combination.db }}"
+          overlay: "${{ matrix.combination.overlay }}"
 
   test-svc-flow-affinity-minikube:
     runs-on: ubuntu-22.04
