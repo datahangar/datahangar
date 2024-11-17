@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: druid-common-env-config-map
+  namespace: datahangar-stack
+data:
+  DRUID_USE_CONTAINER_IP: "true"

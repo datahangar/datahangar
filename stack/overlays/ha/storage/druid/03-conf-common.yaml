@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: druid-common-config-map
+  namespace: datahangar-stack
+data:
+  common.runtime.properties: |-
+    #Default port for all nodes 8088
+    druid.port=8088
+    druid.plaintextPort=8088
+
+    #Web server
+    druid.server.http.numThreads=60
+
+    #Emitter
+    druid.emitter=noop
+    druid.emitter.http.recipientBaseUrl=http://druid_exporter_url:druid_exporter_port/druid
+    druid.emitter.logging.logLevel=debug
+
+    #Extensions
+    druid.extensions.loadList=[ "druid-avro-extensions", "druid-lookups-cached-global", "druid-s3-extensions", "druid-hdfs-storage", "druid-kafka-indexing-service", "druid-datasketches","druid-multi-stage-query", "postgresql-metadata-storage" ]
+
+    #Indexer
+    druid.indexer.logs.directory=/opt/shared/indexing-logs
+    druid.indexer.logs.type=file
+
+    #Metadata
+    druid.metadata.storage.connector.connectURI=jdbc:postgresql://postgres-ha-pgpool-service.stack.svc.cluster.local:5432/druid
+    druid.metadata.storage.connector.password=FoolishPassword
+    druid.metadata.storage.connector.user=druid
+    druid.metadata.storage.type=postgresql
+
+    # Processing threads and buffers
+    druid.processing.numThreads=2
+    druid.processing.buffer.sizeBytes=500MiB
+    druid.processing.numMergeBuffers=4
+    druid.processing.tmpDir=var/druid/processing
+    druid.indexer.fork.property.druid.processing.numThreads=2
+    druid.indexer.fork.property.druid.processing.numMergeBuffers=6
+    druid.indexer.fork.property.druid.processing.buffer.sizeBytes=500MiB
+
+    #Deep storage
+    druid.storage.storageDirectory=/data/deepstorage
+    druid.storage.type=local
+
+    #Zookeeper
+    druid.zk.service.enabled=true
+    druid.zk.service.host=zookeeper-headless-service.stack.svc.cluster.local
+
+  log4j2.xml: |-
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <!--<Configuration status="TRACE">
+        <Appenders>
+            <Http name="Http" url="https://demo.parseable.io/api/v1/ingest" method="POST">
+              <Property name="Authorization" value="Basic YWRtaW46YWRtaW4=" />
+              <Property name="X-P-Stream" value="druide2e" />
+              <Property name="Accept" value="application/json" />
+              <Property name="X-Java-Runtime" value="$${java:runtime}" />
+              <JsonLayout properties="true"/>
+            </Http>
+        </Appenders>
+        <Loggers>
+            <Root level="info">
+                <AppenderRef ref="Http"/>
+            </Root>
+        </Loggers>
+    </Configuration>-->
+    <Configuration status="WARN">
+            <Appenders>
+                    <Console name="Console" target="SYSTEM_OUT">
+                            <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
+                    </Console>
+            </Appenders>
+            <Loggers>
+                    <Root level="info">
+                            <AppenderRef ref="Console"/>
+                    </Root>
+                    <Logger name="org.apache.druid.jetty.RequestLog" additivity="false" level="DEBUG">
+                            <AppenderRef ref="Console"/>
+                    </Logger>
+            </Loggers>
+    </Configuration>

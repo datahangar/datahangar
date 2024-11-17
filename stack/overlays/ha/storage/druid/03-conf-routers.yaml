@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: druid-routers-config-map
+  namespace: datahangar-stack
+data:
+  jvm.config: |-
+    -server
+    -Xms128m
+    -Xmx256m
+    -XX:+UseG1GC
+    -XX:MaxDirectMemorySize=256m
+    -XX:+ExitOnOutOfMemoryError
+    -Duser.timezone=UTC
+    -Dfile.encoding=UTF-8
+    -Djava.io.tmpdir=var/tmp
+    -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager
+  main.config: |-
+    org.apache.druid.cli.Main server router
+  runtime.properties: |-
+    #Role
+    druid.service=druid/router
+
+    # HTTP proxy
+    druid.router.http.numConnections=50
+    druid.router.http.readTimeout=PT5M
+    druid.router.http.numMaxThreads=100
+    druid.server.http.numThreads=100
+
+    # Service discovery
+    druid.router.defaultBrokerServiceName=druid/broker
+    druid.router.coordinatorServiceName=druid/coordinator
+
+    # Management proxy to coordinator / overlord: required for unified web console.
+    druid.router.managementProxy.enabled=true

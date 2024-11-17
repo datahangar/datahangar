@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../../base/storage/druid
+
+patches:
+  - path: 03-conf-brokers.yaml
+  - path: 03-conf-common.yaml
+  - path: 03-conf-coordinators.yaml
+  - path: 03-env.yaml
+  - path: 03-conf-historicals.yaml
+  - path: 03-conf-middlemanagers.yaml
+  - path: 03-conf-routers.yaml
+  - path: 04-brokers.yaml
+  - path: 04-coordinators.yaml
+  - path: 04-historicals.yaml
+  - path: 04-middlemanagers.yaml
+  - path: 04-routers.yaml

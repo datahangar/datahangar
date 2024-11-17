@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: druid-cluster-historicals
+  namespace: datahangar-stack
+spec:
+  replicas: 2

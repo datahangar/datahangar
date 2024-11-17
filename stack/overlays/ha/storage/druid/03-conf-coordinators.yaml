@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: druid-coordinators-config-map
+  namespace: datahangar-stack
+data:
+  jvm.config: |-
+    -server
+    -Xms128m
+    -Xmx512m
+    -XX:+ExitOnOutOfMemoryError
+    -XX:+UseG1GC
+    -Duser.timezone=UTC
+    -Dfile.encoding=UTF-8
+    -Djava.io.tmpdir=var/tmp
+    -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager
+    -Dderby.stream.error.file=var/druid/derby.log
+  main.config: |-
+    org.apache.druid.cli.Main server coordinator
+  runtime.properties: |-
+    #Role
+    druid.service=druid/coordinator
+
+    #Coordinator specifics
+    druid.coordinator.startDelay=PT10S
+    druid.coordinator.period=PT5S
+    druid.coordinator.asOverlord.enabled=true
+    druid.coordinator.asOverlord.overlordService=druid/overlord
+
+    #Indexer
+    druid.indexer.queue.startDelay=PT5S
+    druid.indexer.storage.type=metadata
+
+    #Segments
+    druid.manager.segments.pollDuration=PT5S
