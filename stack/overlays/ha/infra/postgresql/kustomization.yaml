@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../../base/infra/postgresql
+  - 00-configmap-ha-hook-script.yaml
+  - 01-depl-pgpool.yaml
+  - 02-sset-postgres.yaml
