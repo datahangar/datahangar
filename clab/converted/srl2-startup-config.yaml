@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: bgp-srl2-startup-config
+    namespace: c9s-bgp
+data:
+  startup-config: |-
+    / interface ethernet-1/1 {
+        admin-state enable
+        subinterface 0 {
+            ipv4 {
+                address 10.2.0.1/30
+            }
+            admin-state enable
+        }
+    }
+
+    / interface ethernet-1/10 {
+        admin-state enable
+        subinterface 0 {
+            ipv4 {
+                address 192.0.2.2/30
+            }
+            admin-state enable
+        }
+    }
+
+    / network-instance default {
+        protocols {
+            bgp {
+                router-id 2.2.2.2
+                admin-state enable
+                autonomous-system 65002
+                neighbor 192.0.2.1 {
+                    peer-as 65001
+                    local-as {
+                        as-number 65002
+                    }
+                }
+                ipv4-unicast {
+                    network 10.2.0.0/30
+                }
+            }
+        }
+    }
+

@@ -1,0 +1,71 @@
+---
+apiVersion: clabernetes.containerlab.dev/v1alpha1
+kind: Topology
+metadata:
+  name: bgp
+  namespace: c9s-bgp
+spec:
+  deployment:
+    filesFromConfigMap:
+        client1:
+          - filePath: configs/client.sh
+            configMapName: bgp-client1-files
+            configMapPath: configs-client.sh
+            mode: read
+        client2:
+          - filePath: configs/client.sh
+            configMapName: bgp-client2-files
+            configMapPath: configs-client.sh
+            mode: read
+        srl1:
+          - filePath: configs/srl1.cfg
+            configMapName: bgp-srl1-startup-config
+            configMapPath: startup-config
+            mode: read
+        srl2:
+          - filePath: configs/srl2.cfg
+            configMapName: bgp-srl2-startup-config
+            configMapPath: startup-config
+            mode: read
+  naming: prefixed
+  definition:
+    containerlab: |-
+          name: bgp
+
+          topology:
+            nodes:
+              srl1:
+                kind: nokia_srlinux
+                image: ghcr.io/nokia/srlinux:23.10.1
+                startup-config: configs/srl1.cfg
+
+              srl2:
+                kind: nokia_srlinux
+                image: ghcr.io/nokia/srlinux:23.10.1
+                startup-config: configs/srl2.cfg
+
+              client1:
+                kind: linux
+                image: ghcr.io/srl-labs/alpine
+                binds:
+                  - configs/client.sh:/config.sh
+                exec:
+                  - "ash -c '/config.sh 1'"
+
+              client2:
+                kind: linux
+                image: ghcr.io/srl-labs/alpine
+                binds:
+                  - configs/client.sh:/config.sh
+                exec:
+                  - "ash -c '/config.sh 2'"
+
+            links:
+              # links between client1 and srl1
+              - endpoints: [client1:eth1, srl1:e1-1]
+
+              # inter-switch link
+              - endpoints: [srl1:e1-10, srl2:e1-10]
+
+              # links between client2 and srl2
+              - endpoints: [srl2:e1-1, client2:eth1]
