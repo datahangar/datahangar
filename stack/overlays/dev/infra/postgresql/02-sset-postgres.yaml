@@ -16,7 +16,7 @@ spec:
         app.kubernetes.io/name: postgresql
     spec:
       containers:
-        - image: bitnami/postgresql:16.1.0-debian-11-r15
+        - image: bitnamilegacy/postgresql:16.1.0-debian-11-r15
           imagePullPolicy: IfNotPresent
           name: postgres
           ports:
